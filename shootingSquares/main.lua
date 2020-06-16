@@ -8,6 +8,9 @@ SQUARE_SIZE = 25
 -- Font size
 FONT_SIZE = 20
 
+-- Add new square every couple of points
+NEW_SQUARE_POINT_THRESHOLD = 10
+
 --[[
     Init function to set variables
 ]]
@@ -33,11 +36,15 @@ function love.load()
     -- Init score
     score = 0
 
-    -- Set initial position and speeds
-    currX = math.random() * (WINDOW_WIDTH - SQUARE_SIZE)
-    currY = math.random() * (WINDOW_HEIGHT - SQUARE_SIZE)
-    dx = 60
-    dy = 60
+    -- Create table of squares and set init positions
+    squares = {
+        {
+            currX = math.random() * (WINDOW_WIDTH - SQUARE_SIZE),
+            currY = math.random() * (WINDOW_HEIGHT - SQUARE_SIZE),
+            dx = 60,
+            dy = 60
+        }
+    }
 end
 
 --[[
@@ -46,24 +53,7 @@ end
     dt - amount of time (in sec) passed per frame
 ]]
 function love.update(dt)
-    -- Calculate distance to move in X and Y directions
-    moveX = dt * dx
-    moveY = dt * dy
-
-    -- If moving in that direction goes out of bounds, switch directions
-    if currX + moveX < 0 or currX + SQUARE_SIZE + moveX > WINDOW_WIDTH then
-        dx = -dx
-        moveX = -moveX
-    end
-    if currY + moveY < 0 or currY + SQUARE_SIZE + moveY > WINDOW_HEIGHT then
-        dy = -dy
-        moveY = -moveY
-    end
-
-    -- Update position
-    currX = currX + moveX
-    currY = currY + moveY
-
+    moveSquares(dt)
 end
 
 --[[
@@ -77,19 +67,33 @@ end
 ]]
 function love.mousepressed(x, y, button, istouch, presses)
     -- Update score and position if cursor is in bounds
-    if button == 1 and checkWithinSquare(x, y) then
-        score = score + 1
-        currX = math.random() * (WINDOW_WIDTH - SQUARE_SIZE)
-        currY = math.random() * (WINDOW_HEIGHT - SQUARE_SIZE)
+    if button == 1 then
+        for i, square in ipairs(squares) do
+            if checkWithinSquare(x, y, square) then
+                score = score + 1
+                square.currX = math.random() * (WINDOW_WIDTH - SQUARE_SIZE)
+                square.currY = math.random() * (WINDOW_HEIGHT - SQUARE_SIZE)
 
-        -- Randomize direction 
-        local changeX, changeY = math.random() < 0.5, math.random() < 0.5
-        if changeX then
-            dx = -dx
-        end
+                -- Randomize direction
+                local changeX, changeY = math.random() < 0.5, math.random() < 0.5
+                if changeX then
+                    square.dx = -square.dx
+                end
 
-        if changeY then
-            dy = -dy
+                if changeY then
+                    square.dy = -square.dy
+                end
+
+                -- Add a new square every couple of points
+                if score % NEW_SQUARE_POINT_THRESHOLD == 0 then
+                    table.insert(squares, {
+                        currX = math.random() * (WINDOW_WIDTH - SQUARE_SIZE),
+                        currY = math.random() * (WINDOW_HEIGHT - SQUARE_SIZE),
+                        dx = 60,
+                        dy = 60
+                    })
+                end
+            end
         end
     end
 end
@@ -98,15 +102,23 @@ end
     Render graphics
 ]]
 function love.draw()
-    -- Highlight square with red color is mouse is within bounds
+    -- Get mouse position
     local x, y = love.mouse.getPosition()
-    if checkWithinSquare(x, y) then
-        love.graphics.setColor(255, 0, 0)
-    end
-    love.graphics.rectangle("fill", currX, currY, SQUARE_SIZE, SQUARE_SIZE)
 
-    -- Reset color and print score
-    love.graphics.setColor(255, 255, 255)
+    -- Check each square
+    for i, square in ipairs(squares) do
+        -- Highlight square with red color is mouse is within bounds
+        if checkWithinSquare(x, y, square) then
+            love.graphics.setColor(255, 0, 0)
+        else
+            love.graphics.setColor(255, 255, 255)
+        end
+
+        love.graphics.rectangle("fill", square.currX, square.currY, SQUARE_SIZE, SQUARE_SIZE)
+    end
+
+    -- Set text color and print
+    love.graphics.setColor(0, 120, 255)
     love.graphics.printf("Score is " .. score, 0, 50, WINDOW_WIDTH, "center")
 end
 
@@ -117,9 +129,39 @@ end
     y - y-position to check
     returns true if point is in square
 ]]
-function checkWithinSquare(x, y)
-    withinX = x > currX and x < currX + SQUARE_SIZE
-    withinY = y > currY and y < currY + SQUARE_SIZE
+function checkWithinSquare(x, y, square)
+    withinX = x > square.currX and x < square.currX + SQUARE_SIZE
+    withinY = y > square.currY and y < square.currY + SQUARE_SIZE
 
     return withinX and withinY
+end
+
+--[[
+    Move every square in play
+
+    dt - amount of time (in sec) passed per frame
+]]
+function moveSquares(dt)
+    for i, square in ipairs(squares) do
+        -- Calculate distance to move in X and Y directions
+        local currX, currY, dx, dy = square.currX, square.currY, square.dx, square.dy
+        moveX = dt * dx
+        moveY = dt * dy
+
+        -- If moving in that direction goes out of bounds, switch directions
+        if currX + moveX < 0 or currX + SQUARE_SIZE + moveX > WINDOW_WIDTH then
+            square.dx = -dx
+            moveX = -moveX
+        end
+        if currY + moveY < 0 or currY + SQUARE_SIZE + moveY > WINDOW_HEIGHT then
+            square.dy = -dy
+            moveY = -moveY
+        end
+
+        -- TODO: maybe add collision between squares as well?
+
+        -- Update position
+        square.currX = currX + moveX
+        square.currY = currY + moveY
+    end
 end
