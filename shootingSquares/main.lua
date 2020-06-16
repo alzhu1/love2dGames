@@ -11,6 +11,9 @@ FONT_SIZE = 20
 -- Add new square every couple of points
 NEW_SQUARE_POINT_THRESHOLD = 10
 
+-- Maximum number of squares
+MAX_NUM_SQUARES = 5
+
 --[[
     Init function to set variables
 ]]
@@ -85,7 +88,7 @@ function love.mousepressed(x, y, button, istouch, presses)
                 end
 
                 -- Add a new square every couple of points
-                if score % NEW_SQUARE_POINT_THRESHOLD == 0 then
+                if score % NEW_SQUARE_POINT_THRESHOLD == 0 and table.getn(squares) < MAX_NUM_SQUARES then
                     table.insert(squares, {
                         currX = math.random() * (WINDOW_WIDTH - SQUARE_SIZE),
                         currY = math.random() * (WINDOW_HEIGHT - SQUARE_SIZE),
