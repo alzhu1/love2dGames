@@ -61,6 +61,9 @@ function love.load()
 
     -- Other keys not in map default to empty list
     setmetatable(currDirToKeyMap, {__index = function() return {} end })
+
+    -- Keep a cooldown for turning again
+    turnCooldown = 0
 end
 
 --[[
@@ -86,7 +89,7 @@ function love.keypressed(key, scancode, isrepeat)
     -- Get the valid keys when moving in a direction
     local validKeys = currDirToKeyMap[snake.head.direction]
     for _, validKey in ipairs(validKeys) do
-        if key == validKey then
+        if key == validKey and turnCooldown == 0 then
             -- Switch direction of head, add a "turn" to each body part queue
             snake.head.direction = key
             for i, bodyPart in ipairs(snake.body) do
@@ -98,6 +101,9 @@ function love.keypressed(key, scancode, isrepeat)
                     turnY = snake.head.y
                 }
             end
+
+            -- Set the turn cooldown, only allow turns after clearing a square
+            turnCooldown = SQUARE_SIZE
             return
         end
     end
@@ -152,6 +158,9 @@ function movePiece(index, dt)
     if index == 0 or piece.turns.first > piece.turns.last then
         piece.x = piece.x + moveX
         piece.y = piece.y + moveY
+
+        -- Subtract from turnCooldown if it's still in effect
+        turnCooldown = ((turnCooldown > 0) and turnCooldown - (60 * dt)) or 0
     else
         -- Here, move the body part up to and past the turn
 
