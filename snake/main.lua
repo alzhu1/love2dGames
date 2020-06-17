@@ -121,6 +121,10 @@ end
     Render graphics
 ]]
 function love.draw()
+    -- Draw food
+    love.graphics.setColor(255, 0, 0)
+    love.graphics.circle("fill", food.x, food.y, FOOD_RADIUS)
+
     -- Draw head
     love.graphics.setColor(255, 255, 255)
     love.graphics.rectangle("fill", snake.head.x, snake.head.y, SQUARE_SIZE, SQUARE_SIZE)
@@ -137,10 +141,6 @@ function love.draw()
         local currTurn = lastBodyPart.turns[i]
         love.graphics.rectangle("fill", currTurn.turnX, currTurn.turnY, SQUARE_SIZE, SQUARE_SIZE)
     end
-
-    -- Draw food
-    love.graphics.setColor(255, 0, 0)
-    love.graphics.circle("fill", food.x, food.y, FOOD_RADIUS)
 end
 
 --[[
