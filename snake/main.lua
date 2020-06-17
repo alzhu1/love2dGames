@@ -9,7 +9,7 @@ FONT_SIZE = 20
 SQUARE_SIZE = 10
 
 -- Radius of the food (circle)
-FOOD_RADIUS = 5
+FOOD_RADIUS = SQUARE_SIZE / 2
 
 -- Speed
 SNAKE_SPEED = 160
@@ -84,6 +84,29 @@ end
     dt - amount of time (in sec) passed per frame
 ]]
 function love.update(dt)
+    -- Check for direction change, acts as a "key buffer"
+    local validKeys = currDirToKeyMap[snake.head.direction]
+    for _, validKey in ipairs(validKeys) do
+        if love.keyboard.isDown(validKey) and turnCooldown == 0 then
+            -- Switch direction of head, add a "turn" to each body part queue
+            snake.head.direction = validKey
+            for i, bodyPart in ipairs(snake.body) do
+                local last = bodyPart.turns.last + 1
+                bodyPart.turns.last = last
+                bodyPart.turns[last] = {
+                    turnDir = validKey,
+                    turnX = snake.head.x,
+                    turnY = snake.head.y
+                }
+            end
+
+            -- Set the turn cooldown, only allow turns after clearing a square
+            turnCooldown = SQUARE_SIZE
+            break
+        end
+    end
+
+    -- Move segments
     movePiece(0, dt)
     for i, bodyPart in ipairs(snake.body) do
         movePiece(i, dt)
@@ -92,37 +115,6 @@ function love.update(dt)
     -- Check collisions and eat food after moving
 
     eatFood()
-end
-
---[[
-    Callback used when key is pressed
-
-    key - the key code pressed
-    scancode - seems to be the same as key for the most part (?)
-    isrepeat - true if key is repeating
-]]
-function love.keypressed(key, scancode, isrepeat)
-    -- Get the valid keys when moving in a direction
-    local validKeys = currDirToKeyMap[snake.head.direction]
-    for _, validKey in ipairs(validKeys) do
-        if key == validKey and turnCooldown == 0 then
-            -- Switch direction of head, add a "turn" to each body part queue
-            snake.head.direction = key
-            for i, bodyPart in ipairs(snake.body) do
-                local last = bodyPart.turns.last + 1
-                bodyPart.turns.last = last
-                bodyPart.turns[last] = {
-                    turnDir = key,
-                    turnX = snake.head.x,
-                    turnY = snake.head.y
-                }
-            end
-
-            -- Set the turn cooldown, only allow turns after clearing a square
-            turnCooldown = SQUARE_SIZE
-            return
-        end
-    end
 end
 
 --[[
