@@ -8,6 +8,12 @@ FONT_SIZE = 20
 -- Size of squares (snake head, body, and food)
 SQUARE_SIZE = 10
 
+-- Radius of the food (circle)
+FOOD_RADIUS = 5
+
+-- Speed
+SNAKE_SPEED = 160
+
 --[[
     Init function to set variables
 ]]
@@ -64,6 +70,12 @@ function love.load()
 
     -- Keep a cooldown for turning again
     turnCooldown = 0
+
+    -- Keep track of current food location
+    food = {
+        x = math.random() * (WINDOW_WIDTH - FOOD_RADIUS),
+        y = math.random() * (WINDOW_HEIGHT - FOOD_RADIUS)
+    }
 end
 
 --[[
@@ -76,6 +88,10 @@ function love.update(dt)
     for i, bodyPart in ipairs(snake.body) do
         movePiece(i, dt)
     end
+
+    -- Check collisions and eat food after moving
+
+    eatFood()
 end
 
 --[[
@@ -117,8 +133,7 @@ function love.draw()
     love.graphics.setColor(255, 255, 255)
     love.graphics.rectangle("fill", snake.head.x, snake.head.y, SQUARE_SIZE, SQUARE_SIZE)
 
-    -- Draw white body
-    love.graphics.setColor(255, 255, 255)
+    -- Draw body
     for i, bodyPart in ipairs(snake.body) do
         love.graphics.rectangle("fill", bodyPart.x, bodyPart.y, SQUARE_SIZE, SQUARE_SIZE)
     end
@@ -130,6 +145,10 @@ function love.draw()
         local currTurn = lastBodyPart.turns[i]
         love.graphics.rectangle("fill", currTurn.turnX, currTurn.turnY, SQUARE_SIZE, SQUARE_SIZE)
     end
+
+    -- Draw food
+    love.graphics.setColor(255, 0, 0)
+    love.graphics.circle("fill", food.x, food.y, FOOD_RADIUS)
 end
 
 --[[
@@ -143,15 +162,15 @@ function movePiece(index, dt)
     local moveX, moveY = 0, 0
     local direction = piece.direction
     if direction == "left" then
-        moveX = -60 * dt
+        moveX = -SNAKE_SPEED * dt
     elseif direction == "right" then
-        moveX = 60 * dt
+        moveX = SNAKE_SPEED * dt
     end
 
     if direction == "up" then
-        moveY = -60 * dt
+        moveY = -SNAKE_SPEED * dt
     elseif direction == "down" then
-        moveY = 60 * dt
+        moveY = SNAKE_SPEED * dt
     end
 
     -- Move normally if it's the head or no turns required
@@ -160,7 +179,7 @@ function movePiece(index, dt)
         piece.y = piece.y + moveY
 
         -- Subtract from turnCooldown if it's still in effect
-        turnCooldown = ((turnCooldown > 0) and turnCooldown - (60 * dt)) or 0
+        turnCooldown = ((turnCooldown > 0) and turnCooldown - (SNAKE_SPEED * dt)) or 0
     else
         -- Here, move the body part up to and past the turn
 
@@ -248,6 +267,22 @@ function movePiece(index, dt)
                 piece.x = piece.x + moveX
             end
         end
+    end
+end
+
+function eatFood()
+    -- Check if head collides with center point of food circle
+    local foodX, foodY = food.x, food.y
+    local headX, headY = snake.head.x, snake.head.y
+
+    local withinX = foodX > headX and foodX < headX + SQUARE_SIZE
+    local withinY = foodY > headY and foodY < headY + SQUARE_SIZE
+    if withinX and withinY then
+        -- Add to body
+
+        -- Randomize food to another location
+        food.x = math.random() * (WINDOW_WIDTH - FOOD_RADIUS)
+        food.y = math.random() * (WINDOW_HEIGHT - FOOD_RADIUS)
     end
 end
 
