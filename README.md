@@ -12,3 +12,4 @@ love .
 
 ## Game List
 * **Shooting Squares**: Click on the moving square to gain points
+* **Snake**: Eat food and grow bigger
