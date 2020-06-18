@@ -1,3 +1,6 @@
+-- Import Queue "class"
+require 'Queue'
+
 -- Init dimensions of window
 WINDOW_WIDTH = 1280
 WINDOW_HEIGHT = 720
@@ -53,7 +56,7 @@ function love.load()
             direction = "right",
             x = snake.head.x - (i * SQUARE_SIZE),
             y = snake.head.y,
-            turns = {first = 1, last = 0}
+            turns = Queue:new()
         }
     end
 
@@ -91,13 +94,12 @@ function love.update(dt)
             -- Switch direction of head, add a "turn" to each body part queue
             snake.head.direction = validKey
             for i, bodyPart in ipairs(snake.body) do
-                local last = bodyPart.turns.last + 1
-                bodyPart.turns.last = last
-                bodyPart.turns[last] = {
+                local newTurn = {
                     turnDir = validKey,
                     turnX = snake.head.x,
                     turnY = snake.head.y
                 }
+                bodyPart.turns:enqueue(newTurn)
             end
 
             -- Set the turn cooldown, only allow turns after clearing a square
@@ -166,7 +168,7 @@ function movePiece(index, dt)
     end
 
     -- Move normally if it's the head or no turns required
-    if index == 0 or piece.turns.first > piece.turns.last then
+    if index == 0 or piece.turns:isEmpty() then
         piece.x = piece.x + moveX
         piece.y = piece.y + moveY
 
@@ -176,15 +178,15 @@ function movePiece(index, dt)
         -- Here, move the body part up to and past the turn
 
         -- TODO: refactor
-        local first = piece.turns.first
-        local turnDir = piece.turns[first].turnDir
+        local currTurn = piece.turns:peek()
+        local turnDir, turnX, turnY = currTurn.turnDir, currTurn.turnX, currTurn.turnY
 
         -- Based on turnDir, move this piece's x and y to behind the next neighbor
         local nextPiece = ((index == 1) and snake.head) or snake.body[index - 1]
 
         -- Vertical then turncase
         if moveX == 0 then
-            if direction == "up" and piece.y + moveY < piece.turns[first].turnY then
+            if direction == "up" and piece.y + moveY < turnY then
 
                 if turnDir == "right" then
                     piece.x = nextPiece.x - SQUARE_SIZE
@@ -195,12 +197,11 @@ function movePiece(index, dt)
                 end
 
                 -- Remove from queue
-                piece.turns[first] = nil
-                piece.turns.first = first + 1
+                piece.turns:dequeue()
 
                 -- Switch dir
                 piece.direction = turnDir
-            elseif direction == "down" and piece.y + moveY > piece.turns[first].turnY then
+            elseif direction == "down" and piece.y + moveY > turnY then
                 if turnDir == "right" then
                     piece.x = nextPiece.x - SQUARE_SIZE
                     piece.y = nextPiece.y
@@ -210,8 +211,7 @@ function movePiece(index, dt)
                 end
 
                 -- Remove from queue
-                piece.turns[first] = nil
-                piece.turns.first = first + 1
+                piece.turns:dequeue()
 
                 -- Switch dir
                 piece.direction = turnDir
@@ -223,7 +223,7 @@ function movePiece(index, dt)
 
         -- Horizontal then turn case
         if moveY == 0 then
-            if direction == "left" and piece.x + moveX < piece.turns[first].turnX then
+            if direction == "left" and piece.x + moveX < turnX then
 
                 if turnDir == "down" then
                     piece.x = nextPiece.x
@@ -234,12 +234,11 @@ function movePiece(index, dt)
                 end
 
                 -- Remove from queue
-                piece.turns[first] = nil
-                piece.turns.first = first + 1
+                piece.turns:dequeue()
 
                 -- Switch dir
                 piece.direction = turnDir
-            elseif direction == "right" and piece.x + moveX > piece.turns[first].turnX then
+            elseif direction == "right" and piece.x + moveX > turnX then
                 if turnDir == "down" then
                     piece.x = nextPiece.x
                     piece.y = nextPiece.y - SQUARE_SIZE
@@ -249,8 +248,7 @@ function movePiece(index, dt)
                 end
 
                 -- Remove from queue
-                piece.turns[first] = nil
-                piece.turns.first = first + 1
+                piece.turns:dequeue()
 
                 -- Switch dir
                 piece.direction = turnDir
