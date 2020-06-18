@@ -49,17 +49,6 @@ function love.load()
         body = {}
     }
 
-    -- TOREMOVE: Test with a default body
-    -- turns queue: items should contain a turnDir, turnX, and turnY
-    for i=1, 15 do
-        snake.body[i] = {
-            direction = "right",
-            x = snake.head.x - (i * SQUARE_SIZE),
-            y = snake.head.y,
-            turns = Queue:new()
-        }
-    end
-
     -- Keep a mapping from direction to valid key presses
     currDirToKeyMap = {
         up = {"left", "right"},
@@ -137,11 +126,14 @@ function love.draw()
     end
 
     -- Get the turns of the last body part and color them white (illusion of filled snake)
-    local lastBodyPart = snake.body[#snake.body]
-    local first, last = lastBodyPart.turns.first, lastBodyPart.turns.last
-    for i=first, last do
-        local currTurn = lastBodyPart.turns[i]
-        love.graphics.rectangle("fill", currTurn.turnX, currTurn.turnY, SQUARE_SIZE, SQUARE_SIZE)
+    local lastIndex = #snake.body
+    if lastIndex ~= 0 then
+        local lastBodyPart = snake.body[lastIndex]
+        local first, last = lastBodyPart.turns.first, lastBodyPart.turns.last
+        for i=first, last do
+            local currTurn = lastBodyPart.turns[i]
+            love.graphics.rectangle("fill", currTurn.turnX, currTurn.turnY, SQUARE_SIZE, SQUARE_SIZE)
+        end
     end
 end
 
@@ -269,6 +261,36 @@ function eatFood()
     local withinY = foodY > headY and foodY < headY + SQUARE_SIZE
     if withinX and withinY then
         -- Add to body
+        local lastIndex = #snake.body
+        local lastBodyPart = ((lastIndex == 0) and snake.head) or snake.body[lastIndex]
+        local direction, x, y = lastBodyPart.direction, lastBodyPart.x, lastBodyPart.y
+
+        local newBodyPart = { direction = direction, turns = Queue:new() }
+
+        if direction == "up" then
+            newBodyPart.x = x
+            newBodyPart.y = y + SQUARE_SIZE
+        elseif direction == "right" then
+            newBodyPart.x = x - SQUARE_SIZE
+            newBodyPart.y = y
+        elseif direction == "down" then
+            newBodyPart.x = x
+            newBodyPart.y = y - SQUARE_SIZE
+        elseif direction == "left" then
+            newBodyPart.x = x + SQUARE_SIZE
+            newBodyPart.y = y
+        end
+
+        -- TODO: refactor/make more robust
+        -- Copy lastBodyPart's turns to newBodyPart
+        if lastIndex ~= 0 then
+            for i=lastBodyPart.turns.first, lastBodyPart.turns.last do
+                newBodyPart.turns:enqueue(lastBodyPart.turns[i])
+            end
+        end
+
+        -- Depending on direction, change x or y accordingly
+        snake.body[lastIndex+1] = newBodyPart
 
         -- Randomize food to another location
         food.x = math.random() * (WINDOW_WIDTH - FOOD_RADIUS)
