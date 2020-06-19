@@ -36,7 +36,7 @@ function love.load()
     math.randomseed(os.time())
 
     -- Set gameState to beginning state
-    gameState = "start"
+    gameState = "play"
 
     -- Initialize snake
     -- TODO: create a Snake class?
@@ -76,36 +76,42 @@ end
     dt - amount of time (in sec) passed per frame
 ]]
 function love.update(dt)
-    -- Check for direction change, acts as a "key buffer"
-    local validKeys = currDirToKeyMap[snake.head.direction]
-    for _, validKey in ipairs(validKeys) do
-        if love.keyboard.isDown(validKey) and turnCooldown == 0 then
-            -- Switch direction of head, add a "turn" to each body part queue
-            snake.head.direction = validKey
-            for i, bodyPart in ipairs(snake.body) do
-                local newTurn = {
-                    turnDir = validKey,
-                    turnX = snake.head.x,
-                    turnY = snake.head.y
-                }
-                bodyPart.turns:enqueue(newTurn)
+    if gameState == "play" then
+        -- Check for direction change, acts as a "key buffer"
+        local validKeys = currDirToKeyMap[snake.head.direction]
+        for _, validKey in ipairs(validKeys) do
+            if love.keyboard.isDown(validKey) and turnCooldown == 0 then
+                -- Switch direction of head, add a "turn" to each body part queue
+                snake.head.direction = validKey
+                for i, bodyPart in ipairs(snake.body) do
+                    local newTurn = {
+                        turnDir = validKey,
+                        turnX = snake.head.x,
+                        turnY = snake.head.y
+                    }
+                    bodyPart.turns:enqueue(newTurn)
+                end
+
+                -- Set the turn cooldown, only allow turns after clearing a square
+                turnCooldown = SQUARE_SIZE
+                break
             end
-
-            -- Set the turn cooldown, only allow turns after clearing a square
-            turnCooldown = SQUARE_SIZE
-            break
         end
+
+        -- Move segments
+        movePiece(0, dt)
+        for i, bodyPart in ipairs(snake.body) do
+            movePiece(i, dt)
+        end
+
+        -- Check collisions and eat food after moving
+        if checkWallCollision() or (checkBodyCollision() and turnCooldown == 0) then
+            gameState = "gameover"
+            return
+        end
+
+        eatFood()
     end
-
-    -- Move segments
-    movePiece(0, dt)
-    for i, bodyPart in ipairs(snake.body) do
-        movePiece(i, dt)
-    end
-
-    -- Check collisions and eat food after moving
-
-    eatFood()
 end
 
 --[[
@@ -134,6 +140,11 @@ function love.draw()
             local currTurn = lastBodyPart.turns[i]
             love.graphics.rectangle("fill", currTurn.turnX, currTurn.turnY, SQUARE_SIZE, SQUARE_SIZE)
         end
+    end
+
+    -- If gameover, draw text
+    if gameState == "gameover" then
+        love.graphics.printf("Game over", 0, 50, WINDOW_WIDTH, "center")
     end
 end
 
@@ -298,3 +309,27 @@ function eatFood()
     end
 end
 
+function checkWallCollision()
+    local headX, headY = snake.head.x, snake.head.y
+
+    local xCollide = headX < 0 or headX + SQUARE_SIZE > WINDOW_WIDTH
+    local yCollide = headY < 0 or headY + SQUARE_SIZE > WINDOW_HEIGHT
+    return xCollide or yCollide
+end
+
+function checkBodyCollision()
+    local headX, headY = snake.head.x, snake.head.y
+
+    for _, bodyPart in ipairs(snake.body) do
+        local bodyX, bodyY = bodyPart.x, bodyPart.y
+
+        local checkX = headX < bodyX + SQUARE_SIZE and headX + SQUARE_SIZE > bodyX
+        local checkY = headY < bodyY + SQUARE_SIZE and headY + SQUARE_SIZE > bodyY
+
+        if checkX and checkY then
+            return true
+        end
+    end
+
+    return false    
+end
