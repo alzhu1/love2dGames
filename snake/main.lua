@@ -104,14 +104,14 @@ function love.update(dt)
             movePiece(i, dt)
         end
 
-        -- Check collisions and eat food after moving
+        -- Wall collision ends game
         if checkWallCollision() then
             gameState = "gameover"
             return
         end
 
+        -- Body collision will "eat" the body segments
         local collidedIndex = checkBodyCollision()
-
         if collidedIndex > 0 then
             -- "Eat" aka delete all body parts from index onwards
             local lastIndex = #snake.body
@@ -120,6 +120,7 @@ function love.update(dt)
             end
         end
 
+        -- Check if food should be eaten
         eatFood()
     end
 end
@@ -319,6 +320,9 @@ function eatFood()
     end
 end
 
+--[[
+    Returns true if the snake head has collided with the walls
+]]
 function checkWallCollision()
     local headX, headY = snake.head.x, snake.head.y
 
@@ -327,13 +331,18 @@ function checkWallCollision()
     return xCollide or yCollide
 end
 
+--[[
+    Returns index of the body part that the head collides with (0 if no collision)
+]]
 function checkBodyCollision()
     local headX, headY = snake.head.x, snake.head.y
 
+    -- Iterate through body, can ignore 1st body part (impossible to eat)
     for i, bodyPart in ipairs(snake.body) do
         if i > 1 then
             local bodyX, bodyY = bodyPart.x, bodyPart.y
 
+            -- AABB collision check
             local checkX = headX < bodyX + SQUARE_SIZE and headX + SQUARE_SIZE > bodyX
             local checkY = headY < bodyY + SQUARE_SIZE and headY + SQUARE_SIZE > bodyY
 
@@ -343,5 +352,6 @@ function checkBodyCollision()
         end
     end
 
+    -- No collisions returns index 0
     return 0
 end
