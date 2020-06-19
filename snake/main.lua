@@ -46,8 +46,8 @@ function love.load()
     snake = {
         head = {
             direction = "right",
-            x = math.random() * (WINDOW_WIDTH - SQUARE_SIZE - 2*SPAWN_MARGIN) + SPAWN_MARGIN,
-            y = math.random() * (WINDOW_HEIGHT - SQUARE_SIZE - 2*SPAWN_MARGIN) + SPAWN_MARGIN
+            x = WINDOW_WIDTH / 2,
+            y = WINDOW_HEIGHT / 2
         },
         body = {}
     }
