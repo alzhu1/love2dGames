@@ -21,6 +21,8 @@ SNAKE_SPEED = 160
 -- Set a spawn margin so things don't spawn at the very edges
 SPAWN_MARGIN = 20
 
+-- Number of times to attempt randomizing food location (to avoid body collision)
+COLLISION_PASSES = 10
 
 --[[
     Init function to set variables
@@ -281,11 +283,8 @@ function eatFood()
     -- Check if head collides with center point of food circle
     -- Do a "faux" collision with invisible AABB inside the food
     local foodX, foodY = food.x - FOOD_BOX_SIZE / 2, food.y - FOOD_BOX_SIZE / 2
-    local headX, headY = snake.head.x, snake.head.y
 
-    local withinX = headX < foodX + FOOD_BOX_SIZE and headX + SQUARE_SIZE > foodX
-    local withinY = headY < foodY + FOOD_BOX_SIZE and headY + SQUARE_SIZE > foodY
-    if withinX and withinY then
+    if checkSquareCollision(snake.head, SQUARE_SIZE, {x = foodX, y = foodY}, FOOD_BOX_SIZE) then
         -- Add to body
         local lastIndex = #snake.body
         local lastBodyPart = ((lastIndex == 0) and snake.head) or snake.body[lastIndex]
@@ -338,18 +337,11 @@ end
     Returns index of the body part that the head collides with (0 if no collision)
 ]]
 function checkBodyCollision()
-    local headX, headY = snake.head.x, snake.head.y
-
     -- Iterate through body, can ignore 1st body part (impossible to eat)
     for i, bodyPart in ipairs(snake.body) do
         if i > 1 then
-            local bodyX, bodyY = bodyPart.x, bodyPart.y
-
             -- AABB collision check
-            local checkX = headX < bodyX + SQUARE_SIZE and headX + SQUARE_SIZE > bodyX
-            local checkY = headY < bodyY + SQUARE_SIZE and headY + SQUARE_SIZE > bodyY
-
-            if checkX and checkY then
+            if checkSquareCollision(snake.head, SQUARE_SIZE, bodyPart, SQUARE_SIZE) then
                 return i
             end
         end
@@ -363,7 +355,57 @@ end
     Randomize food location to new position
 ]]
 function randomizeFoodLocation()
-    local partialMaxLimit = FOOD_RADIUS + (2 * SPAWN_MARGIN)
-    food.x = math.random() * (WINDOW_WIDTH - partialMaxLimit) + SPAWN_MARGIN
-    food.y = math.random() * (WINDOW_HEIGHT - partialMaxLimit) + SPAWN_MARGIN
+    local tempX, tempY = 0, 0
+
+    -- Make numerous passes if random position will collided with snake
+    for i=1, COLLISION_PASSES do
+        local partialMaxLimit = FOOD_RADIUS + (2 * SPAWN_MARGIN)
+        tempX = math.random() * (WINDOW_WIDTH - partialMaxLimit) + SPAWN_MARGIN
+        tempY = math.random() * (WINDOW_HEIGHT - partialMaxLimit) + SPAWN_MARGIN
+
+        -- Set up temporary food collider
+        local collided = false
+        local foodCheck = {
+            x = tempX - FOOD_BOX_SIZE / 2,
+            y = tempY - FOOD_BOX_SIZE / 2
+        }
+
+        -- Check head/body collisions
+        if checkSquareCollision(snake.head, SQUARE_SIZE, foodCheck, FOOD_BOX_SIZE) then
+            collided = true
+        else
+            for _, bodyPart in ipairs(snake.body) do
+                if checkSquareCollision(bodyPart, SQUARE_SIZE, foodCheck, FOOD_BOX_SIZE) then
+                    collided = true
+                    break
+                end
+            end
+        end
+
+        -- No collision means valid location
+        if not collided then break end
+    end
+
+    food.x = tempX
+    food.y = tempY
+end
+
+--[[
+    General function used to check AABB collisions (assuming squares)
+
+    obj1 - first object
+    size1 - side length of first object
+    obj2 - second object
+    size2 - side length of second object
+
+    Returns if a collision occurred between both objects
+]]
+function checkSquareCollision(obj1, size1, obj2, size2)
+    local x1, y1 = obj1.x, obj1.y
+    local x2, y2 = obj2.x, obj2.y
+
+    local withinX = x1 < x2 + size2 and x1 + size1 > x2
+    local withinY = y1 < y2 + size2 and y1 + size1 > y2
+
+    return withinX and withinY
 end
