@@ -17,6 +17,9 @@ FOOD_RADIUS = SQUARE_SIZE / 2
 -- Speed
 SNAKE_SPEED = 160
 
+-- Set a spawn margin so things don't spawn at the very edges
+SPAWN_MARGIN = 20
+
 --[[
     Init function to set variables
 ]]
@@ -43,8 +46,8 @@ function love.load()
     snake = {
         head = {
             direction = "right",
-            x = math.random() * (WINDOW_WIDTH - SQUARE_SIZE),
-            y = math.random() * (WINDOW_HEIGHT - SQUARE_SIZE)
+            x = math.random() * (WINDOW_WIDTH - SQUARE_SIZE - 2*SPAWN_MARGIN) + SPAWN_MARGIN,
+            y = math.random() * (WINDOW_HEIGHT - SQUARE_SIZE - 2*SPAWN_MARGIN) + SPAWN_MARGIN
         },
         body = {}
     }
@@ -64,10 +67,8 @@ function love.load()
     turnCooldown = 0
 
     -- Keep track of current food location
-    food = {
-        x = math.random() * (WINDOW_WIDTH - FOOD_RADIUS),
-        y = math.random() * (WINDOW_HEIGHT - FOOD_RADIUS)
-    }
+    food = {}
+    randomizeFoodLocation()
 end
 
 --[[
@@ -315,8 +316,7 @@ function eatFood()
         snake.body[lastIndex+1] = newBodyPart
 
         -- Randomize food to another location
-        food.x = math.random() * (WINDOW_WIDTH - FOOD_RADIUS)
-        food.y = math.random() * (WINDOW_HEIGHT - FOOD_RADIUS)
+        randomizeFoodLocation()
     end
 end
 
@@ -354,4 +354,13 @@ function checkBodyCollision()
 
     -- No collisions returns index 0
     return 0
+end
+
+--[[
+    Randomize food location to new position
+]]
+function randomizeFoodLocation()
+    local partialMaxLimit = FOOD_RADIUS + (2 * SPAWN_MARGIN)
+    food.x = math.random() * (WINDOW_WIDTH - partialMaxLimit) + SPAWN_MARGIN
+    food.y = math.random() * (WINDOW_HEIGHT - partialMaxLimit) + SPAWN_MARGIN
 end
