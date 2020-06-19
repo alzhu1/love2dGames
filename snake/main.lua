@@ -11,14 +11,16 @@ FONT_SIZE = 20
 -- Size of squares (snake head, body, and food)
 SQUARE_SIZE = 10
 
--- Radius of the food (circle)
+-- Radius of the food, and width of internal AABB
 FOOD_RADIUS = SQUARE_SIZE / 2
+FOOD_BOX_SIZE = 2 * FOOD_RADIUS / math.sqrt(2)
 
 -- Speed
 SNAKE_SPEED = 160
 
 -- Set a spawn margin so things don't spawn at the very edges
 SPAWN_MARGIN = 20
+
 
 --[[
     Init function to set variables
@@ -277,11 +279,12 @@ end
 
 function eatFood()
     -- Check if head collides with center point of food circle
-    local foodX, foodY = food.x, food.y
+    -- Do a "faux" collision with invisible AABB inside the food
+    local foodX, foodY = food.x - FOOD_BOX_SIZE / 2, food.y - FOOD_BOX_SIZE / 2
     local headX, headY = snake.head.x, snake.head.y
 
-    local withinX = foodX > headX and foodX < headX + SQUARE_SIZE
-    local withinY = foodY > headY and foodY < headY + SQUARE_SIZE
+    local withinX = headX < foodX + FOOD_BOX_SIZE and headX + SQUARE_SIZE > foodX
+    local withinY = headY < foodY + FOOD_BOX_SIZE and headY + SQUARE_SIZE > foodY
     if withinX and withinY then
         -- Add to body
         local lastIndex = #snake.body
