@@ -105,7 +105,7 @@ function love.update(dt)
         end
 
         -- Check collisions and eat food after moving
-        if checkWallCollision() or (checkBodyCollision() and turnCooldown == 0) then
+        if checkWallCollision() or checkBodyCollision() then
             gameState = "gameover"
             return
         end
@@ -320,14 +320,16 @@ end
 function checkBodyCollision()
     local headX, headY = snake.head.x, snake.head.y
 
-    for _, bodyPart in ipairs(snake.body) do
-        local bodyX, bodyY = bodyPart.x, bodyPart.y
+    for i, bodyPart in ipairs(snake.body) do
+        if i > 1 then
+            local bodyX, bodyY = bodyPart.x, bodyPart.y
 
-        local checkX = headX < bodyX + SQUARE_SIZE and headX + SQUARE_SIZE > bodyX
-        local checkY = headY < bodyY + SQUARE_SIZE and headY + SQUARE_SIZE > bodyY
+            local checkX = headX < bodyX + SQUARE_SIZE and headX + SQUARE_SIZE > bodyX
+            local checkY = headY < bodyY + SQUARE_SIZE and headY + SQUARE_SIZE > bodyY
 
-        if checkX and checkY then
-            return true
+            if checkX and checkY then
+                return true
+            end
         end
     end
 
