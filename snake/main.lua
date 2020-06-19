@@ -105,9 +105,19 @@ function love.update(dt)
         end
 
         -- Check collisions and eat food after moving
-        if checkWallCollision() or checkBodyCollision() then
+        if checkWallCollision() then
             gameState = "gameover"
             return
+        end
+
+        local collidedIndex = checkBodyCollision()
+
+        if collidedIndex > 0 then
+            -- "Eat" aka delete all body parts from index onwards
+            local lastIndex = #snake.body
+            for i=collidedIndex, lastIndex do
+                snake.body[i] = nil
+            end
         end
 
         eatFood()
@@ -328,10 +338,10 @@ function checkBodyCollision()
             local checkY = headY < bodyY + SQUARE_SIZE and headY + SQUARE_SIZE > bodyY
 
             if checkX and checkY then
-                return true
+                return i
             end
         end
     end
 
-    return false    
+    return 0
 end
