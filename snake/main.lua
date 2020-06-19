@@ -2,8 +2,8 @@
 require 'Queue'
 
 -- Init dimensions of window
-WINDOW_WIDTH = 1280
-WINDOW_HEIGHT = 720
+WINDOW_WIDTH = 640
+WINDOW_HEIGHT = 360
 
 -- Font size
 FONT_SIZE = 20
