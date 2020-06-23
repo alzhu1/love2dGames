@@ -6,7 +6,7 @@ WINDOW_WIDTH = 1280
 WINDOW_HEIGHT = 720
 
 -- Font size
-FONT_SIZE = 20
+FONT_SIZE = 10
 
 -- Size of squares
 SQUARE_SIZE = 10
@@ -57,6 +57,8 @@ function love.load()
             y = math.random() * (WINDOW_HEIGHT - 4 * SQUARE_SIZE)
         })
     end
+
+    timer = 0
 end
 
 --[[
@@ -66,7 +68,14 @@ end
 ]]
 function love.update(dt)
     if gameState == "play" then
-
+        if timer >= 3 then
+            for _, piece in ipairs(allPieces) do
+                piece:rotate(false)
+            end
+            timer = 0
+        else
+            timer = timer + dt
+        end
     end
 end
 
