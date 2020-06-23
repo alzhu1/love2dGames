@@ -1,6 +1,9 @@
+-- Import the Tetromino class
+require 'Tetromino'
+
 -- Init dimensions of window
-WINDOW_WIDTH = 640
-WINDOW_HEIGHT = 360
+WINDOW_WIDTH = 1280
+WINDOW_HEIGHT = 720
 
 -- Font size
 FONT_SIZE = 20
@@ -29,6 +32,31 @@ function love.load()
 
     -- Set gameState to beginning state
     gameState = "play"
+
+    -- Store general pieceTypes in a list
+    pieceTypes = { "I", "J", "L", "O", "S", "T", "Z" }
+
+    -- Keep a mapping from pieceType to color (indexed values are RGB)
+    pieceTypeToColor = {
+        I = { 0, 1, 1 }, -- cyan
+        J = { 0, 0, 1 }, -- blue
+        L = { 1, 165/255, 0 }, -- orange
+        O = { 1, 1, 0 }, -- yellow
+        S = { 0, 1, 0 }, -- green
+        T = { 1, 0, 1 }, -- purple
+        Z = { 1, 0, 0 } -- red
+    }
+
+    -- Keep a bunch of pieces here
+    allPieces = {}
+
+    -- Temp pieces
+    for i, pieceType in ipairs(pieceTypes) do
+        allPieces[i] = Tetromino:new(pieceType, {
+            x = math.random() * (WINDOW_WIDTH - 4 * SQUARE_SIZE),
+            y = math.random() * (WINDOW_HEIGHT - 4 * SQUARE_SIZE)
+        })
+    end
 end
 
 --[[
@@ -46,7 +74,11 @@ end
     Render graphics
 ]]
 function love.draw()
-
+    -- Draw each piece
+    for _, piece in ipairs(allPieces) do
+        local pieceType = piece.pieceType
+        piece:draw(pieceTypeToColor[pieceType])
+    end
 end
 
 -- TODO: keep this for tetris collisions?
