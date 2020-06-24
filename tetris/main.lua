@@ -87,7 +87,6 @@ function love.load()
         Z = blocks[NUM_ROWS - 1][NUM_COLS / 2 + 2]
     }
 
-
     -- Track pieces and last piece used
     lastPieceUsed = nil
     nextPieceType = getNewPieceType()
@@ -104,6 +103,28 @@ function love.load()
     -- Use this for DAS tracking
     DASframeCount = 0
     DASfirstMoveMade = false
+
+    -- Score and mapping number of lines cleared to score
+    score = 0
+    linesClearedToScore = { 40, 100, 300, 1200 }
+
+    -- Level tracker and list used to check frames per move
+    level = 0
+    levelToFramesPerMove = {
+        [0] = 48,
+        43, 38, 33, 28, 23, 18, 13, 8, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3,
+        2, 2, 2, 2, 2, 2, 2, 2, 2, 2
+    }
+    setmetatable(levelToFramesPerMove, { __index = function() return 1 end })
+
+    -- Line clear variables
+    totalLinesCleared = 0
+    currLevelNumLinesCleared = 0
+    linesClearedToNextLevel = math.min(
+        level * 10 + 10,
+        math.max(100, level * 10 - 50)
+    )
+
 end
 
 --[[
@@ -113,7 +134,7 @@ end
 ]]
 function love.update(dt)
     if gameState == "play" then
-        if frameCount == 60 then
+        if frameCount == levelToFramesPerMove[level] then
             local isActive = activePiece:move()
             updateActivePiece(isActive)
             frameCount = 0
@@ -187,6 +208,12 @@ function love.draw()
 
     -- Draw the next piece
     nextPiece:draw(pieceTypeToColor[nextPiece.pieceType])
+
+    -- Print other info
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.printf("Level: " .. tostring(level), LEFT_X, TOP_Y - 3 * SQUARE_SIZE, NUM_COLS * SQUARE_SIZE, "center")
+    love.graphics.printf("Total Lines Cleared: " .. tostring(totalLinesCleared), LEFT_X, TOP_Y - 2 * SQUARE_SIZE, NUM_COLS * SQUARE_SIZE, "center")
+    love.graphics.printf("Score: " .. tostring(score), LEFT_X, TOP_Y - SQUARE_SIZE, NUM_COLS * SQUARE_SIZE, "center")
 end
 
 --[[
@@ -228,20 +255,39 @@ function updateActivePiece(isActive)
             blocks[row][col].rgb = pieceTypeToColor[activePiece.pieceType]
             blocks[row].blockCount = blocks[row].blockCount + 1
         end
+
+        -- Check if any lines were cleared
+        numLinesCleared = clearRows()
+        if numLinesCleared > 0 then
+            -- Update score and line clear vars
+            score = score + linesClearedToScore[numLinesCleared]
+            totalLinesCleared = totalLinesCleared + numLinesCleared
+            currLevelNumLinesCleared = currLevelNumLinesCleared + numLinesCleared
+
+            -- If enough lines cleared, move to next level
+            if currLevelNumLinesCleared >= linesClearedToNextLevel then
+                currLevelNumLinesCleared = currLevelNumLinesCleared - linesClearedToNextLevel
+                level = level + 1
+                linesClearedToNextLevel = linesClearedToNextLevel + 10
+            end
+        end
+
         activePiece = Tetromino:new(nextPieceType, pieceTypeToSpawnLocation[nextPieceType])
         nextPieceType = getNewPieceType()
         nextPiece = Tetromino:new(nextPieceType, {
             x = pieceTypeToSpawnLocation[nextPieceType].x + (NUM_ROWS / 2 - 1) * SQUARE_SIZE,
             y = WINDOW_HEIGHT / 2
         })
-        clearRows()
 
         -- TODO: check if spawned piece already collides. If so, game over.
+
     end
 end
 
 --[[
     Clears any completed rows
+
+    Return number of completed lines
 ]]
 function clearRows()
     -- Search for the rows that should be deleted
@@ -278,6 +324,9 @@ function clearRows()
             blocks[NUM_ROWS][i].rgb = {1, 1, 1}
         end
     end
+
+    -- Return size of list to determine points
+    return #rowsToDelete
 end
 
 --[[
