@@ -19,11 +19,11 @@ Tetromino.__index = Tetromino -- Failed lookups go here
     I - 1234
 
 
-    J - 1
-        234
+    J - 432
+          1
 
-    L -   1
-        432
+    L - 234
+        1
 
     O - 12
         34
@@ -31,10 +31,9 @@ Tetromino.__index = Tetromino -- Failed lookups go here
     S -  34
         12
 
-    T -  1
-        234
+    T - 234
+         1
 
-    Looks weird that it's backwards, but it should make rotation simpler
     Z - 43
          21
 ]]
@@ -56,11 +55,11 @@ function Tetromino:new(pieceType, initPos)
             newX = initX + (i - 1) * SQUARE_SIZE
             newY = initY
         elseif pieceType == "J" then
-            newX = initX + (i - 2) * SQUARE_SIZE
-            newY = initY + SQUARE_SIZE
-        elseif pieceType == "L" then
             newX = initX - (i - 2) * SQUARE_SIZE
-            newY = initY + SQUARE_SIZE
+            newY = initY - SQUARE_SIZE
+        elseif pieceType == "L" then
+            newX = initX + (i - 2) * SQUARE_SIZE
+            newY = initY - SQUARE_SIZE
         elseif pieceType == "O" then
             newX = initX + ((i + 1) % 2) * SQUARE_SIZE
             newY = initY + math.floor((i - 1) / 2) * SQUARE_SIZE
@@ -69,7 +68,7 @@ function Tetromino:new(pieceType, initPos)
             newY = initY - math.floor((i - 1) / 2) * SQUARE_SIZE
         elseif pieceType == "T" then
             newX = initX + (i - 3) * SQUARE_SIZE
-            newY = initY + SQUARE_SIZE
+            newY = initY - SQUARE_SIZE
         elseif pieceType == "Z" then
             newX = initX - math.floor(i / 2) * SQUARE_SIZE
             newY = initY - math.floor((i - 1) / 2) * SQUARE_SIZE

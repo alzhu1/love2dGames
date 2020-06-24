@@ -77,9 +77,26 @@ function love.load()
         end
     end
 
-    -- Temp piece
-    activePiece = Tetromino:new("I", { x = LEFT_X, y = TOP_Y})
-    nextPiece = nil -- Randomize
+    pieceTypeToSpawnLocation = {
+        I = blocks[NUM_ROWS][NUM_COLS / 2 - 1],
+        J = blocks[NUM_ROWS - 1][NUM_COLS / 2 + 2],
+        L = blocks[NUM_ROWS - 1][NUM_COLS / 2],
+        O = blocks[NUM_ROWS][NUM_COLS / 2],
+        S = blocks[NUM_ROWS - 1][NUM_COLS / 2],
+        T = blocks[NUM_ROWS - 1][NUM_COLS / 2 + 1],
+        Z = blocks[NUM_ROWS - 1][NUM_COLS / 2 + 2]
+    }
+
+
+    -- Track pieces and last piece used
+    lastPieceUsed = nil
+    nextPieceType = getNewPieceType()
+    activePiece = Tetromino:new(nextPieceType, pieceTypeToSpawnLocation[nextPieceType])
+    nextPieceType = getNewPieceType()
+    nextPiece = Tetromino:new(nextPieceType, {
+        x = pieceTypeToSpawnLocation[nextPieceType].x + (NUM_ROWS / 2 - 1) * SQUARE_SIZE,
+        y = WINDOW_HEIGHT / 2
+    })
 
     -- Keep track of frames since a move
     frameCount = 0
@@ -165,7 +182,11 @@ function love.draw()
         love.graphics.printf(tostring(row.blockCount), row[1].x - SQUARE_SIZE, row[1].y, SQUARE_SIZE, "center")
     end
 
+    -- Draw the currently moveable piece
     activePiece:draw(pieceTypeToColor[activePiece.pieceType])
+
+    -- Draw the next piece
+    nextPiece:draw(pieceTypeToColor[nextPiece.pieceType])
 end
 
 --[[
@@ -207,7 +228,12 @@ function updateActivePiece(isActive)
             blocks[row][col].rgb = pieceTypeToColor[activePiece.pieceType]
             blocks[row].blockCount = blocks[row].blockCount + 1
         end
-        activePiece = Tetromino:new("I", { x = LEFT_X, y = TOP_Y})
+        activePiece = Tetromino:new(nextPieceType, pieceTypeToSpawnLocation[nextPieceType])
+        nextPieceType = getNewPieceType()
+        nextPiece = Tetromino:new(nextPieceType, {
+            x = pieceTypeToSpawnLocation[nextPieceType].x + (NUM_ROWS / 2 - 1) * SQUARE_SIZE,
+            y = WINDOW_HEIGHT / 2
+        })
         clearRows()
 
         -- TODO: check if spawned piece already collides. If so, game over.
@@ -252,4 +278,23 @@ function clearRows()
             blocks[NUM_ROWS][i].rgb = {1, 1, 1}
         end
     end
+end
+
+--[[
+    Returns the randomized piece type of the next piece
+]]
+function getNewPieceType()
+    -- NES version picks number from 0 to 7 (1 to 8 equivalent)
+    local randIndex = math.floor(math.random() * 8) + 1
+    local pieceType = pieceTypes[randIndex]
+
+    -- Matching last piece used or dummy value 7 (8 here) will reroll from 0 to 6 (1 to 7)
+    if lastPieceUsed == pieceType or pieceType == nil then
+        randIndex = math.floor(math.random() * 7) + 1
+        pieceType = pieceTypes[randIndex]
+    end
+
+    -- Return the pieceType
+    lastPieceUsed = pieceType
+    return pieceType
 end
