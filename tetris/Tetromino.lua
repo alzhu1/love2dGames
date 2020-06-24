@@ -151,7 +151,7 @@ function Tetromino:sideMove(dir)
         end
     end
 
-    -- Move down by a SQUARE_SIZE and return true
+    -- Move sideways by a SQUARE_SIZE and return true
     for _, block in ipairs(self) do
         block.x = block.x + dir * SQUARE_SIZE
     end
