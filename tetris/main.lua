@@ -72,7 +72,7 @@ function love.load()
                 x = LEFT_X + (col - 1) * SQUARE_SIZE,
                 y = TOP_Y + (NUM_ROWS - row) * SQUARE_SIZE,
                 filled = false,
-                rgb = {row / NUM_ROWS, col / NUM_COLS, row / NUM_ROWS}
+                rgb = {1, 1, 1}
             }
         end
     end
@@ -91,7 +91,7 @@ end
 ]]
 function love.update(dt)
     if gameState == "play" then
-        if frameCount == 48 then
+        if frameCount == 10 then
             local isActive = activePiece:move()
             updateActivePiece(isActive)
             frameCount = 0
@@ -128,12 +128,20 @@ function love.draw()
     -- end
 
     for _, row in ipairs(blocks) do
-        for a, col in ipairs(row) do
+        for _, col in ipairs(row) do
             love.graphics.setColor(col.rgb)
             love.graphics.rectangle("fill", col.x, col.y, SQUARE_SIZE, SQUARE_SIZE)
             love.graphics.setColor(0, 0, 0)
             love.graphics.rectangle("line", col.x, col.y, SQUARE_SIZE, SQUARE_SIZE)
+
+            -- Test
+            local s = ((col.filled) and "t") or "f"
+            love.graphics.printf(s, col.x, col.y, SQUARE_SIZE, "center")
         end
+
+        -- TODO: Make this toggleable under a debug mode?
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.printf(tostring(row.blockCount), row[1].x - SQUARE_SIZE, row[1].y, SQUARE_SIZE, "center")
     end
 
     activePiece:draw(pieceTypeToColor[activePiece.pieceType])
@@ -195,7 +203,42 @@ function updateActivePiece(isActive)
             blocks[row].blockCount = blocks[row].blockCount + 1
         end
         activePiece = Tetromino:new("I", { x = LEFT_X, y = TOP_Y})
+        clearRows()
 
         -- TODO: check if spawned piece already collides. If so, game over.
+    end
+end
+
+function clearRows()
+    local rowsToDelete = {}
+    for i, row in ipairs(blocks) do
+        local blockCount = row.blockCount
+
+        if blockCount == NUM_COLS then
+            table.insert(rowsToDelete, i)
+        end
+    end
+
+    -- Rows to delete contains the indices of the rows that have full rows
+
+    -- TODO: this is sorta inefficient, maybe look into something better
+    for currDeleteNum, deleteIndex in ipairs(rowsToDelete) do
+
+        for rowIndex=deleteIndex - currDeleteNum + 1, NUM_ROWS-1 do
+            local currRow = blocks[rowIndex]
+            local nextRow = blocks[rowIndex + 1]
+
+            for i=1, NUM_COLS do
+                currRow[i].filled = nextRow[i].filled
+                currRow[i].rgb = nextRow[i].rgb
+            end
+
+            currRow.blockCount = nextRow.blockCount
+        end
+
+        for i=1, NUM_COLS do
+            blocks[NUM_ROWS][i].filled = false
+            blocks[NUM_ROWS][i].rgb = {1, 1, 1}
+        end
     end
 end
