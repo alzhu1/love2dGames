@@ -92,7 +92,23 @@ end
 function love.update(dt)
     if gameState == "play" then
         if frameCount == 48 then
-            activePiece:move()
+            local isActive = activePiece:move()
+
+            -- If move failed, set the blocks matrix and get a new piece
+            if not isActive then
+                -- Set blocks using position of tetromino blocks
+                for _, block in ipairs(activePiece) do
+                    local rowCol = convertXYToRowCol(block)
+                    local row, col = rowCol.row, rowCol.col
+
+                    blocks[row][col].filled = true
+                    blocks[row][col].rgb = pieceTypeToColor[activePiece.pieceType]
+                    blocks[row].blockCount = blocks[row].blockCount + 1
+                end
+                activePiece = Tetromino:new("I", { x = LEFT_X, y = TOP_Y})
+
+                -- TODO: check if spawned piece already collides. If so, game over.
+            end
             frameCount = 0
         else
             frameCount = frameCount + 1

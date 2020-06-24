@@ -109,15 +109,27 @@ end
 
 --[[
     Move the tetromino down
+
+    Returns true if move was successful
 ]]
 function Tetromino:move()
-    -- Move down by a SQUARE_SIZE
-    -- Can use this for loop because tetromino is not broken when moving
+    -- Check if there's a collision moving down
+    for _, block in ipairs(self) do
+        local newX, newY = block.x, block.y + SQUARE_SIZE
+        local rowCol = convertXYToRowCol({ x = newX, y = newY })
+        local row, col = rowCol.row, rowCol.col
+
+        -- If collision would occur, return false
+        if (row == -1 and col == -1) or blocks[row][col].filled then
+            return false
+        end
+    end
+
+    -- Move down by a SQUARE_SIZE and return true
     for _, block in ipairs(self) do
         block.y = block.y + SQUARE_SIZE
     end
-
-    -- TODO: collision check here?
+    return true
 end
 
 --[[
