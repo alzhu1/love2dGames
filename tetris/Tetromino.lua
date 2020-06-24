@@ -173,8 +173,6 @@ function Tetromino:rotate(clockwise)
     -- O pieces don't rotate
     if pieceType == "O" then return end
 
-    -- TODO: add something to ensure piece is rotatable
-
     -- Get reference to the pivoting block and rotation
     local pivotBlock = self[3]
     local currRotation = self.currRotation

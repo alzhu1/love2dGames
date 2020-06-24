@@ -122,8 +122,14 @@ function love.update(dt)
     end
 end
 
+--[[
+    Callback used when key is pressed
+
+    key - the key that was pressed
+    scancode - similar to key (something about keyboard independent layouts?)
+    isrepeat - true if key repeats
+]]
 function love.keypressed(key, scancode, isrepeat)
-    -- TODO: add DAS
     if key == "left" then
         activePiece:sideMove(-1)
     elseif key == "right" then
@@ -142,12 +148,6 @@ end
     Render graphics
 ]]
 function love.draw()
-    -- Draw each piece
-    -- for _, piece in ipairs(allPieces) do
-    --     local pieceType = piece.pieceType
-    --     piece:draw(pieceTypeToColor[pieceType])
-    -- end
-
     for _, row in ipairs(blocks) do
         for _, col in ipairs(row) do
             love.graphics.setColor(col.rgb)
