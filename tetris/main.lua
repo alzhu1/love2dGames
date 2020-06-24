@@ -93,22 +93,7 @@ function love.update(dt)
     if gameState == "play" then
         if frameCount == 48 then
             local isActive = activePiece:move()
-
-            -- If move failed, set the blocks matrix and get a new piece
-            if not isActive then
-                -- Set blocks using position of tetromino blocks
-                for _, block in ipairs(activePiece) do
-                    local rowCol = convertXYToRowCol(block)
-                    local row, col = rowCol.row, rowCol.col
-
-                    blocks[row][col].filled = true
-                    blocks[row][col].rgb = pieceTypeToColor[activePiece.pieceType]
-                    blocks[row].blockCount = blocks[row].blockCount + 1
-                end
-                activePiece = Tetromino:new("I", { x = LEFT_X, y = TOP_Y})
-
-                -- TODO: check if spawned piece already collides. If so, game over.
-            end
+            updateActivePiece(isActive)
             frameCount = 0
         else
             frameCount = frameCount + 1
@@ -117,7 +102,15 @@ function love.update(dt)
 end
 
 function love.keypressed(key, scancode, isrepeat)
-    if key == "z" then
+    -- TODO: add DAS
+    if key == "left" then
+        activePiece:sideMove(-1)
+    elseif key == "right" then
+        activePiece:sideMove(1)
+    elseif key == "down" then
+        local isActive = activePiece:move()
+        updateActivePiece(isActive)
+    elseif key == "z" then
         activePiece:rotate(true)
     elseif key == "x" then
         activePiece:rotate(false)
@@ -187,4 +180,22 @@ function convertXYToRowCol(position)
     end
 
     return { row = row, col = col }
+end
+
+function updateActivePiece(isActive)
+    -- If move failed, set the blocks matrix and get a new piece
+    if not isActive then
+        -- Set blocks using position of tetromino blocks
+        for _, block in ipairs(activePiece) do
+            local rowCol = convertXYToRowCol(block)
+            local row, col = rowCol.row, rowCol.col
+
+            blocks[row][col].filled = true
+            blocks[row][col].rgb = pieceTypeToColor[activePiece.pieceType]
+            blocks[row].blockCount = blocks[row].blockCount + 1
+        end
+        activePiece = Tetromino:new("I", { x = LEFT_X, y = TOP_Y})
+
+        -- TODO: check if spawned piece already collides. If so, game over.
+    end
 end

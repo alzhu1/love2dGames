@@ -133,6 +133,32 @@ function Tetromino:move()
 end
 
 --[[
+    Move the tetromino sideways
+
+    dir - -1 if moving left, 1 if moving right
+    Returns true if move was successful
+]]
+function Tetromino:sideMove(dir)
+    -- Check if there's a collision moving sideways
+    for _, block in ipairs(self) do
+        local newX, newY = block.x + dir * SQUARE_SIZE, block.y
+        local rowCol = convertXYToRowCol({ x = newX, y = newY })
+        local row, col = rowCol.row, rowCol.col
+
+        -- If collision would occur, return false
+        if (row == -1 and col == -1) or blocks[row][col].filled then
+            return false
+        end
+    end
+
+    -- Move down by a SQUARE_SIZE and return true
+    for _, block in ipairs(self) do
+        block.x = block.x + dir * SQUARE_SIZE
+    end
+    return true
+end
+
+--[[
     Rotate the tetromino
 
     clockwise - rotate clockwise if true
