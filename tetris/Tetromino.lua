@@ -157,10 +157,10 @@ function Tetromino:rotate(clockwise)
     local reverseDirection = LJTreverse or SZreverse or Ireverse
 
     -- Loop through each block
-    for i=1, 4 do
+    for i, currBlock in ipairs(self) do
         -- Calculate dimension changes (axes switch)
-        local changeInX = self[i].y - pivotBlock.y
-        local changeInY = self[i].x - pivotBlock.x
+        local changeInX = currBlock.y - pivotBlock.y
+        local changeInY = currBlock.x - pivotBlock.x
 
         -- Reverse the values if needed
         if reverseDirection then
@@ -168,14 +168,15 @@ function Tetromino:rotate(clockwise)
             changeInY = -changeInY
         end
 
-        -- Set x and y positions, and rotation amount
-        preTetramino[i] = {
-            x = pivotBlock.x - changeInX,
-            y = pivotBlock.y + changeInY
-        }
-    end
+        -- Check if rotated block position collides
+        local newX, newY = pivotBlock.x - changeInX, pivotBlock.y + changeInY
+        local rowCol = convertXYToRowCol({ x = newX, y = newY }) -- TODO: bad style? (function in other file)
+        local row, col = rowCol.row, rowCol.col
+        if (row == -1 and col == -1) or blocks[row][col].filled then return end
 
-    -- TODO: do the rotation collision check here
+        -- Set x and y positions, and rotation amount
+        preTetramino[i] = { x = newX, y = newY }
+    end
 
     -- No collisions means update the tetramino positions and rotation state
     for i=1, 4 do

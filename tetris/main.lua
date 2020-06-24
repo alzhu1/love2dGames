@@ -15,6 +15,10 @@ SQUARE_SIZE = 25
 NUM_ROWS = 20
 NUM_COLS = 10
 
+-- Leftmost and Topmost positions of the grid
+LEFT_X = WINDOW_WIDTH / 2 - (NUM_COLS / 2 * SQUARE_SIZE)
+TOP_Y = WINDOW_HEIGHT / 2 - (NUM_ROWS / 2 * SQUARE_SIZE)
+
 --[[
     Init function to set variables
 ]]
@@ -59,18 +63,14 @@ function love.load()
         10 x 20 bottom-up map (aka row 1 is the bottom row)
     ]]
 
-    -- Set local vars to leftmost and topmost coordinates
-    local leftX = WINDOW_WIDTH / 2 - (NUM_COLS / 2 * SQUARE_SIZE)
-    local topY = WINDOW_HEIGHT / 2 - (NUM_ROWS / 2 * SQUARE_SIZE)
-
     -- Create NUM_ROWS x NUM_COLS block mapping
     blocks = {}
     for row=1, NUM_ROWS do
         blocks[row] = { blockCount = 0 }
         for col=1, NUM_COLS do
             blocks[row][col] = {
-                x = leftX + (col - 1) * SQUARE_SIZE,
-                y = topY + (NUM_ROWS - row) * SQUARE_SIZE,
+                x = LEFT_X + (col - 1) * SQUARE_SIZE,
+                y = TOP_Y + (NUM_ROWS - row) * SQUARE_SIZE,
                 filled = false,
                 rgb = {row / NUM_ROWS, col / NUM_COLS, row / NUM_ROWS}
             }
@@ -78,7 +78,7 @@ function love.load()
     end
 
     -- Temp piece
-    activePiece = Tetromino:new("I", { x = leftX, y = topY })
+    activePiece = Tetromino:new("I", { x = LEFT_X, y = TOP_Y})
     nextPiece = nil -- Randomize
 
     frameCount = 0
@@ -97,6 +97,14 @@ function love.update(dt)
         else
             frameCount = frameCount + 1
         end
+    end
+end
+
+function love.keypressed(key, scancode, isrepeat)
+    if key == "z" then
+        activePiece:rotate(true)
+    elseif key == "x" then
+        activePiece:rotate(false)
     end
 end
 
@@ -141,4 +149,26 @@ function checkSquareCollision(obj1, size1, obj2, size2)
     local withinY = y1 < y2 + size2 and y1 + size1 > y2
 
     return withinX and withinY
+end
+
+--[[
+    Converts an (x, y) posiiton to (row, col) indices
+
+    position - the (x, y) posiiton
+    Returns corresponding (row, col) indices, or -1 for indices if outside of bounds
+]]
+function convertXYToRowCol(position)
+    local x, y = position.x, position.y
+
+    -- Y maps to row, X maps to column
+    local row = NUM_ROWS - ((y - TOP_Y) / SQUARE_SIZE)
+    local col = ((x - LEFT_X) / SQUARE_SIZE + 1)
+
+    -- Check OOB
+    if row < 1 or row > NUM_ROWS or col < 1 or col > NUM_COLS then
+        row = -1
+        col = -1
+    end
+
+    return { row = row, col = col }
 end
