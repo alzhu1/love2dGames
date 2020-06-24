@@ -147,27 +147,6 @@ function love.draw()
     activePiece:draw(pieceTypeToColor[activePiece.pieceType])
 end
 
--- TODO: keep this for tetris collisions?
---[[
-    General function used to check AABB collisions (assuming squares)
-
-    obj1 - first object
-    size1 - side length of first object
-    obj2 - second object
-    size2 - side length of second object
-
-    Returns if a collision occurred between both objects
-]]
-function checkSquareCollision(obj1, size1, obj2, size2)
-    local x1, y1 = obj1.x, obj1.y
-    local x2, y2 = obj2.x, obj2.y
-
-    local withinX = x1 < x2 + size2 and x1 + size1 > x2
-    local withinY = y1 < y2 + size2 and y1 + size1 > y2
-
-    return withinX and withinY
-end
-
 --[[
     Converts an (x, y) posiiton to (row, col) indices
 
@@ -190,6 +169,11 @@ function convertXYToRowCol(position)
     return { row = row, col = col }
 end
 
+--[[
+    Spawns a new active piece
+
+    isActive - true if the previous active piece couldn't move
+]]
 function updateActivePiece(isActive)
     -- If move failed, set the blocks matrix and get a new piece
     if not isActive then
@@ -209,7 +193,11 @@ function updateActivePiece(isActive)
     end
 end
 
+--[[
+    Clears any completed rows
+]]
 function clearRows()
+    -- Search for the rows that should be deleted
     local rowsToDelete = {}
     for i, row in ipairs(blocks) do
         local blockCount = row.blockCount
@@ -223,7 +211,7 @@ function clearRows()
 
     -- TODO: this is sorta inefficient, maybe look into something better
     for currDeleteNum, deleteIndex in ipairs(rowsToDelete) do
-
+        -- Starting at the row to delete, transfer params of row above to it
         for rowIndex=deleteIndex - currDeleteNum + 1, NUM_ROWS-1 do
             local currRow = blocks[rowIndex]
             local nextRow = blocks[rowIndex + 1]
@@ -233,9 +221,11 @@ function clearRows()
                 currRow[i].rgb = nextRow[i].rgb
             end
 
+            -- Set block count to row above
             currRow.blockCount = nextRow.blockCount
         end
 
+        -- Clear out top row
         for i=1, NUM_COLS do
             blocks[NUM_ROWS][i].filled = false
             blocks[NUM_ROWS][i].rgb = {1, 1, 1}
