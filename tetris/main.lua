@@ -81,7 +81,12 @@ function love.load()
     activePiece = Tetromino:new("I", { x = LEFT_X, y = TOP_Y})
     nextPiece = nil -- Randomize
 
+    -- Keep track of frames since a move
     frameCount = 0
+
+    -- Use this for DAS tracking
+    DASframeCount = 0
+    DASfirstMoveMade = false
 end
 
 --[[
@@ -91,12 +96,28 @@ end
 ]]
 function love.update(dt)
     if gameState == "play" then
-        if frameCount == 10 then
+        if frameCount == 60 then
             local isActive = activePiece:move()
             updateActivePiece(isActive)
             frameCount = 0
         else
             frameCount = frameCount + 1
+        end
+
+        local checkDAS = love.keyboard.isDown("left") or love.keyboard.isDown("right")
+        if checkDAS then
+            DASframeCount = DASframeCount + 1
+
+            local DASfirstMoveCheck = DASframeCount == 16 and not DASfirstMoveMade
+            local DASelseCheck = DASframeCount == 6 and DASfirstMoveMade
+            if DASfirstMoveCheck or DASelseCheck then
+                local moveDir = (love.keyboard.isDown("left") and -1) or 1
+                DASfirstMoveMade = activePiece:sideMove(moveDir)
+                DASframeCount = 0
+            end
+        else
+            DASfirstMoveMade = false
+            DASframeCount = 0
         end
     end
 end
