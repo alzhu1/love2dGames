@@ -125,6 +125,8 @@ function love.load()
         math.max(100, level * 10 - 50)
     )
 
+    -- Soft drop frame count
+    softDropFrameCount = 0
 end
 
 --[[
@@ -156,6 +158,16 @@ function love.update(dt)
         else
             DASfirstMoveMade = false
             DASframeCount = 0
+
+            if love.keyboard.isDown("down") then
+                if softDropFrameCount == 1 then
+                    local isActive = activePiece:move()
+                    updateActivePiece(isActive)
+                end
+                softDropFrameCount = (softDropFrameCount + 1) % 2
+            else
+                softDropFrameCount = 0
+            end
         end
     end
 end
