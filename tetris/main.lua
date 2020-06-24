@@ -70,7 +70,7 @@ function love.load()
         for col=1, NUM_COLS do
             blocks[row][col] = {
                 x = leftX + (col - 1) * SQUARE_SIZE,
-                y = topY + (20 - row) * SQUARE_SIZE,
+                y = topY + (NUM_ROWS - row) * SQUARE_SIZE,
                 filled = false,
                 rgb = {row / NUM_ROWS, col / NUM_COLS, row / NUM_ROWS}
             }
