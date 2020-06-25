@@ -38,7 +38,7 @@ function love.load()
     math.randomseed(os.time())
 
     -- Set gameState to beginning state
-    gameState = "play"
+    gameState = "start"
 
     -- Store general pieceTypes in a list
     pieceTypes = { "I", "J", "L", "O", "S", "T", "Z" }
@@ -120,13 +120,13 @@ function love.load()
     -- Line clear variables
     totalLinesCleared = 0
     currLevelNumLinesCleared = 0
-    linesClearedToNextLevel = math.min(
-        level * 10 + 10,
-        math.max(100, level * 10 - 50)
-    )
+    linesClearedToNextLevel = 0 -- Set this later
 
     -- Soft drop frame count
     softDropFrameCount = 0
+
+    -- Level select frame count
+    levelSelectFrameCount = 0
 end
 
 --[[
@@ -135,6 +135,19 @@ end
     dt - amount of time (in sec) passed per frame
 ]]
 function love.update(dt)
+    if gameState == "start" then
+        if love.keyboard.isDown("up") then
+            if levelSelectFrameCount == 15 then
+                level = (level == 19) and level or level + 1
+            end
+            levelSelectFrameCount = (levelSelectFrameCount + 1) % 16
+        elseif love.keyboard.isDown("down") then
+            if levelSelectFrameCount == 15 then
+                level = (level == 0) and level or level - 1
+            end
+            levelSelectFrameCount = (levelSelectFrameCount + 1) % 16
+        end
+    end
     if gameState == "play" then
         if frameCount == levelToFramesPerMove[level] then
             local isActive = activePiece:move()
@@ -180,17 +193,63 @@ end
     isrepeat - true if key repeats
 ]]
 function love.keypressed(key, scancode, isrepeat)
-    if key == "left" then
-        activePiece:sideMove(-1)
-    elseif key == "right" then
-        activePiece:sideMove(1)
-    elseif key == "down" then
-        local isActive = activePiece:move()
-        updateActivePiece(isActive)
-    elseif key == "z" then
-        activePiece:rotate(true)
-    elseif key == "x" then
-        activePiece:rotate(false)
+    if key == "escape" then
+        love.event.quit()
+    end
+
+    if gameState == "start" then
+        if key == "up" then
+            level = (level == 19) and level or level + 1
+        elseif key == "down" then
+            level = (level == 0) and level or level - 1
+        elseif key == "return" then
+            -- Start game
+            gameState = "play"
+            setLinesClearedToNextLevel()
+            levelSelectFrameCount = 0
+
+            lastPieceUsed = nil
+            nextPieceType = getNewPieceType()
+            activePiece = Tetromino:new(nextPieceType, pieceTypeToSpawnLocation[nextPieceType])
+            nextPieceType = getNewPieceType()
+            nextPiece = Tetromino:new(nextPieceType, {
+                x = pieceTypeToSpawnLocation[nextPieceType].x + (NUM_ROWS / 2 - 1) * SQUARE_SIZE,
+                y = WINDOW_HEIGHT / 2
+            })
+        end
+    elseif gameState == "play" then
+        if key == "left" then
+            activePiece:sideMove(-1)
+        elseif key == "right" then
+            activePiece:sideMove(1)
+        elseif key == "down" then
+            local isActive = activePiece:move()
+            updateActivePiece(isActive)
+        elseif key == "z" then
+            activePiece:rotate(true)
+        elseif key == "x" then
+            activePiece:rotate(false)
+        end
+    elseif gameState == "gameover" then
+        if key == "return" then
+            gameState = "start"
+            level = 0
+            clearBlocks();
+        end
+    end
+end
+
+--[[
+    Callback used when key is released
+
+    key - the key that was pressed
+    scancode - similar to key (something about keyboard independent layouts?)
+]]
+function love.keyreleased(key, scancode)
+    if gameState == "start" then
+        if key == "up" or key == "down" then
+            levelSelectFrameCount = 0
+        end
     end
 end
 
@@ -198,34 +257,52 @@ end
     Render graphics
 ]]
 function love.draw()
-    for _, row in ipairs(blocks) do
-        for _, col in ipairs(row) do
-            love.graphics.setColor(col.rgb)
-            love.graphics.rectangle("fill", col.x, col.y, SQUARE_SIZE, SQUARE_SIZE)
-            love.graphics.setColor(0, 0, 0)
-            love.graphics.rectangle("line", col.x, col.y, SQUARE_SIZE, SQUARE_SIZE)
+    if gameState == "start" then
+        love.graphics.setFont(love.graphics.newFont(FONT_SIZE * 5))
+        love.graphics.printf("TETRIS", 0, TOP_Y, WINDOW_WIDTH, "center")
 
-            -- Test
-            local s = ((col.filled) and "t") or "f"
-            love.graphics.printf(s, col.x, col.y, SQUARE_SIZE, "center")
+        love.graphics.setFont(love.graphics.newFont(FONT_SIZE * 2))
+        love.graphics.printf("Press Enter to start", 0, WINDOW_HEIGHT / 2, WINDOW_WIDTH, "center")
+        love.graphics.printf("Select level with up/down", 0, WINDOW_HEIGHT / 2 + SQUARE_SIZE, WINDOW_WIDTH, "center")
+        love.graphics.printf("Level: " .. tostring(level), 0, WINDOW_HEIGHT / 2 + 2 * SQUARE_SIZE, WINDOW_WIDTH, "center")
+    elseif gameState == "play" or gameState == "gameover" then
+        for _, row in ipairs(blocks) do
+            for _, col in ipairs(row) do
+                love.graphics.setColor(col.rgb)
+                love.graphics.rectangle("fill", col.x, col.y, SQUARE_SIZE, SQUARE_SIZE)
+                love.graphics.setColor(0, 0, 0)
+                love.graphics.rectangle("line", col.x, col.y, SQUARE_SIZE, SQUARE_SIZE)
+
+                -- Test
+                local s = ((col.filled) and "t") or "f"
+                love.graphics.printf(s, col.x, col.y, SQUARE_SIZE, "center")
+            end
+
+            -- TODO: Make this toggleable under a debug mode?
+            love.graphics.setColor(1, 1, 1)
+            love.graphics.printf(tostring(row.blockCount), row[1].x - SQUARE_SIZE, row[1].y, SQUARE_SIZE, "center")
         end
 
-        -- TODO: Make this toggleable under a debug mode?
+        -- Draw the currently moveable piece
+        activePiece:draw(pieceTypeToColor[activePiece.pieceType])
+
+        -- Draw the next piece (and some text)
         love.graphics.setColor(1, 1, 1)
-        love.graphics.printf(tostring(row.blockCount), row[1].x - SQUARE_SIZE, row[1].y, SQUARE_SIZE, "center")
+        love.graphics.printf("NEXT", LEFT_X + (NUM_COLS + 2) * SQUARE_SIZE, WINDOW_HEIGHT / 2 - 2*SQUARE_SIZE, 5 * SQUARE_SIZE, "center")
+        nextPiece:draw(pieceTypeToColor[nextPiece.pieceType])
+
+        -- Print other info
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.printf("Level: " .. tostring(level), LEFT_X, TOP_Y - 3 * SQUARE_SIZE, NUM_COLS * SQUARE_SIZE, "center")
+        love.graphics.printf("Total Lines Cleared: " .. tostring(totalLinesCleared), LEFT_X, TOP_Y - 2 * SQUARE_SIZE, NUM_COLS * SQUARE_SIZE, "center")
+        love.graphics.printf("Score: " .. tostring(score), LEFT_X, TOP_Y - SQUARE_SIZE, NUM_COLS * SQUARE_SIZE, "center")
+
+        -- Print game over if needed
+        if gameState == "gameover" then
+            local gameOverText = "Game Over. Press Enter to return to menu."
+            love.graphics.printf(gameOverText, 0, WINDOW_HEIGHT - 3 * SQUARE_SIZE, WINDOW_WIDTH, "center")
+        end
     end
-
-    -- Draw the currently moveable piece
-    activePiece:draw(pieceTypeToColor[activePiece.pieceType])
-
-    -- Draw the next piece
-    nextPiece:draw(pieceTypeToColor[nextPiece.pieceType])
-
-    -- Print other info
-    love.graphics.setColor(1, 1, 1)
-    love.graphics.printf("Level: " .. tostring(level), LEFT_X, TOP_Y - 3 * SQUARE_SIZE, NUM_COLS * SQUARE_SIZE, "center")
-    love.graphics.printf("Total Lines Cleared: " .. tostring(totalLinesCleared), LEFT_X, TOP_Y - 2 * SQUARE_SIZE, NUM_COLS * SQUARE_SIZE, "center")
-    love.graphics.printf("Score: " .. tostring(score), LEFT_X, TOP_Y - SQUARE_SIZE, NUM_COLS * SQUARE_SIZE, "center")
 end
 
 --[[
@@ -284,6 +361,7 @@ function updateActivePiece(isActive)
             end
         end
 
+        -- Create a new tetromino active piece
         activePiece = Tetromino:new(nextPieceType, pieceTypeToSpawnLocation[nextPieceType])
         nextPieceType = getNewPieceType()
         nextPiece = Tetromino:new(nextPieceType, {
@@ -291,8 +369,14 @@ function updateActivePiece(isActive)
             y = WINDOW_HEIGHT / 2
         })
 
-        -- TODO: check if spawned piece already collides. If so, game over.
-
+        -- If collision occurs at spawn, game is over
+        for _, block in ipairs(activePiece) do
+            local rowCol = convertXYToRowCol(block)
+            if blocks[rowCol.row][rowCol.col].filled then
+                gameState = "gameover"
+                return
+            end
+        end
     end
 end
 
@@ -358,4 +442,27 @@ function getNewPieceType()
     -- Return the pieceType
     lastPieceUsed = pieceType
     return pieceType
+end
+
+--[[
+    Based on level, set the amount of lines needed to clear to go to next level
+]]
+function setLinesClearedToNextLevel()
+    linesClearedToNextLevel = math.min(
+        level * 10 + 10,
+        math.max(100, level * 10 - 50)
+    )
+end
+
+--[[
+    Reset the blocks structure
+]]
+function clearBlocks()
+    for _, row in ipairs(blocks) do
+        for _, block in ipairs(row) do
+            block.filled = false
+            block.rgb = {1, 1, 1}
+        end
+        row.blockCount = 0
+    end
 end
