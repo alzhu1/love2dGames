@@ -240,8 +240,7 @@ function love.keypressed(key, scancode, isrepeat)
     elseif gameState == "gameover" then
         if key == "return" then
             gameState = "start"
-            level = 0
-            clearBlocks();
+            resetGame()
         end
     end
 end
@@ -465,9 +464,10 @@ function setLinesClearedToNextLevel()
 end
 
 --[[
-    Reset the blocks structure
+    Reset the game
 ]]
-function clearBlocks()
+function resetGame()
+    -- Reset the blocks structure
     for _, row in ipairs(blocks) do
         for _, block in ipairs(row) do
             block.filled = false
@@ -475,4 +475,16 @@ function clearBlocks()
         end
         row.blockCount = 0
     end
+
+    level = 0
+    score = 0
+    totalLinesCleared = 0
+    frameCount = 0
+    DASframeCount = 0
+    DASfirstMoveMade = false
+    currLevelNumLinesCleared = 0
+    linesClearedToNextLevel = 0
+    softDropFrameCount = 0
+    levelSelectFrameCount = 0
+    debugMode = false
 end
