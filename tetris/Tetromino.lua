@@ -87,8 +87,9 @@ end
     Draws tetromino to screen (assuming LOVE is being used)
 
     color - color of piece
+    debugMode - true if debug mode is on
 ]]
-function Tetromino:draw(color)
+function Tetromino:draw(color, debugMode)
     -- Use this in case individual blocks are deleted
     for i=1, 4 do
         if self[i] then
@@ -100,8 +101,9 @@ function Tetromino:draw(color)
             love.graphics.setColor(0, 0, 0)
             love.graphics.rectangle("line", x, y, SQUARE_SIZE, SQUARE_SIZE)
 
-            -- Debug numbers drawn on block; remove later
-            love.graphics.printf(tostring(i), x, y, SQUARE_SIZE, "center")
+            if debugMode then
+                love.graphics.printf(tostring(i), x, y, SQUARE_SIZE, "center")
+            end
         end
     end
 end

@@ -127,6 +127,9 @@ function love.load()
 
     -- Level select frame count
     levelSelectFrameCount = 0
+
+    -- Set a debug mode bool
+    debugMode = false
 end
 
 --[[
@@ -195,6 +198,10 @@ end
 function love.keypressed(key, scancode, isrepeat)
     if key == "escape" then
         love.event.quit()
+    end
+
+    if key == "d" then
+        debugMode = not debugMode
     end
 
     if gameState == "start" then
@@ -273,23 +280,26 @@ function love.draw()
                 love.graphics.setColor(0, 0, 0)
                 love.graphics.rectangle("line", col.x, col.y, SQUARE_SIZE, SQUARE_SIZE)
 
-                -- Test
-                local s = ((col.filled) and "t") or "f"
-                love.graphics.printf(s, col.x, col.y, SQUARE_SIZE, "center")
+                -- Debug mode print
+                if debugMode then
+                    local s = ((col.filled) and "t") or "f"
+                    love.graphics.printf(s, col.x, col.y, SQUARE_SIZE, "center")
+                end
             end
 
-            -- TODO: Make this toggleable under a debug mode?
-            love.graphics.setColor(1, 1, 1)
-            love.graphics.printf(tostring(row.blockCount), row[1].x - SQUARE_SIZE, row[1].y, SQUARE_SIZE, "center")
+            if debugMode then
+                love.graphics.setColor(1, 1, 1)
+                love.graphics.printf(tostring(row.blockCount), row[1].x - SQUARE_SIZE, row[1].y, SQUARE_SIZE, "center")
+            end
         end
 
         -- Draw the currently moveable piece
-        activePiece:draw(pieceTypeToColor[activePiece.pieceType])
+        activePiece:draw(pieceTypeToColor[activePiece.pieceType], debugMode)
 
         -- Draw the next piece (and some text)
         love.graphics.setColor(1, 1, 1)
         love.graphics.printf("NEXT", LEFT_X + (NUM_COLS + 2) * SQUARE_SIZE, WINDOW_HEIGHT / 2 - 2*SQUARE_SIZE, 5 * SQUARE_SIZE, "center")
-        nextPiece:draw(pieceTypeToColor[nextPiece.pieceType])
+        nextPiece:draw(pieceTypeToColor[nextPiece.pieceType], debugMode)
 
         -- Print other info
         love.graphics.setColor(1, 1, 1)
